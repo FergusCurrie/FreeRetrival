@@ -1,4 +1,5 @@
 .venv/
-data/
+data/cards/*
+data/to_add/*
 free_retrival.db
 
