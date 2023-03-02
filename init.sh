@@ -1,5 +1,9 @@
 #!/bin/bash
 
+mkdir data
+mkdir data/cards
+mkdir data/to_add
+
 
 sqlite3 -batch free_retrival.db """CREATE TABLE retrivals (
     id INTEGER PRIMARY KEY,
