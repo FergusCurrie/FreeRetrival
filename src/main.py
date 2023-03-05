@@ -1,9 +1,10 @@
 
-import sqlite3
-import sys
+
 import os
 from SqliteConnector import SqliteConnector
 import uuid 
+import random 
+import numpy as np 
 
 class FreeRetrival():
     def __init__(self) -> None:
@@ -13,7 +14,47 @@ class FreeRetrival():
         self.sqlite_connector.query("SELECT * FROM retrivals")
 
     def scheduler(self) -> int:
-        pass
+        """
+        The scheduler reads all rows and calcululates some cumulative exponential
+        on each row as a 'cost'. I then randomly selects a row based on the cost. 
+
+        TODO: np refactor 
+        """
+        rows = self.read_all_from_database()
+        
+        # get unique card_ids
+        card_ids = set()
+        for row in rows:
+            card_ids.add(row['card_id'])
+        card_ids = np.array(list(card_ids))
+        
+        costs = []
+        for card_id in card_ids:
+            target_rows = self.sqlite_connector.query(f"SELECT * FROM retrivals WHERE card_id = {card_id}")
+            
+            # calculate cost
+            cost = 0 
+
+            # sort target_rows by date
+            target_rows.sort(key=lambda x: x['date'])
+
+            for row in target_rows:
+                cost += row['rating'] ** 2
+            costs.append(cost)
+
+
+
+        costs = np.array(costs)
+        weights = 1 / costs 
+        weights = weights / np.sum(weights)
+        assert(np.allclose(np.sum(weights), np.ones(len(weights)), 0.1))
+
+
+        # randomly select a card_id weighted by costs
+        next_card = random.choices(card_ids, weights=weights)[0]
+        
+        return next_card
+
 
     def next_card(self):
         # 1. get next card
